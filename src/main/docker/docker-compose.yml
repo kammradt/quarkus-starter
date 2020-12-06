@@ -1,0 +1,29 @@
+version: '3'
+
+services:
+  database-postgres-compose:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: "template"
+    ports:
+      - "1111:5432"
+    volumes:
+      - /home/kammradt/Documents/PostgreSQLVolume:/var/lib/postgresql/data
+    networks:
+      - postgres-compose-network
+      
+  database-pgadmin-compose:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "root@root.com"
+      PGADMIN_DEFAULT_PASSWORD: "root"
+    ports:
+      - "2222:80"
+    depends_on:
+      - database-postgres-compose
+    networks:
+      - postgres-compose-network
+
+networks: 
+  postgres-compose-network:
+    driver: bridge
