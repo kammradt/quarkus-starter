@@ -1,11 +1,11 @@
 package org.kammradt.account
 
-import org.eclipse.microprofile.jwt.JsonWebToken
 import org.kammradt.account.domain.Account
 import org.kammradt.account.dto.AccountCreationRequest
 import org.kammradt.account.dto.AccountLoginRequest
 import org.kammradt.account.dto.TokenResponse
 import org.kammradt.account.exceptions.AccountNotFound
+import org.kammradt.account.security.SecurityService
 import org.kammradt.account.security.TokenService
 import org.mindrot.jbcrypt.BCrypt
 import javax.enterprise.context.ApplicationScoped
@@ -22,7 +22,7 @@ class AccountService {
     lateinit var validator: AccountValidator
 
     @Inject
-    lateinit var jsonWebToken: JsonWebToken
+    lateinit var security: SecurityService
 
     @Transactional
     fun create(@Valid accountCreation: AccountCreationRequest): Account {
@@ -51,9 +51,7 @@ class AccountService {
     @Transactional
     fun delete(id: Long) = findById(id).delete()
 
-    fun findAll(): List<Account> {
-        return Account.listAll()
-    }
+    fun findAll(): List<Account> = Account.listAll()
 
     fun findById(id: Long): Account = Account.findById(id) ?: throw AccountNotFound()
 
@@ -64,6 +62,6 @@ class AccountService {
         account.persist()
     }
 
-    private fun findByEmail(email: String): Account =
+    fun findByEmail(email: String): Account =
             Account.find("email", email).firstResult() ?: throw AccountNotFound()
 }
