@@ -6,6 +6,7 @@ import javax.ws.rs.container.ContainerResponseFilter
 import javax.ws.rs.core.Response
 import javax.ws.rs.ext.Provider
 
+@Status
 @Provider
 class StatusFilter : ContainerResponseFilter {
     override fun filter(request: ContainerRequestContext, response: ContainerResponseContext) {
