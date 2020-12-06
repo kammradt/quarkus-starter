@@ -1,11 +1,12 @@
 package org.kammradt.account
 
 import org.kammradt.account.domain.Account
+import org.kammradt.account.domain.Role
 import org.kammradt.account.dto.AccountCreationRequest
 import org.kammradt.account.dto.AccountLoginRequest
+import org.kammradt.account.dto.AccountUpdateRequest
 import org.kammradt.account.dto.TokenResponse
 import org.kammradt.account.exceptions.AccountNotFound
-import org.kammradt.account.security.SecurityService
 import org.kammradt.account.security.TokenService
 import org.mindrot.jbcrypt.BCrypt
 import javax.enterprise.context.ApplicationScoped
@@ -21,30 +22,23 @@ class AccountService {
     @Inject
     lateinit var validator: AccountValidator
 
-    @Inject
-    lateinit var security: SecurityService
-
     @Transactional
     fun create(@Valid accountCreation: AccountCreationRequest): Account {
         validator.validateCreation(accountCreation)
-        val account = Account()
-        updateAccount(account, accountCreation)
-        return account
+        return createAccount(accountCreation)
     }
 
     @Transactional
-    fun update(id: Long, @Valid accountUpdate: AccountCreationRequest): Account {
-        val account: Account = findById(id)
+    fun update(id: Long, @Valid accountUpdate: AccountUpdateRequest): Account {
+        val account = findById(id)
         validator.validateUpdate(accountUpdate)
         updateAccount(account, accountUpdate)
         return account
     }
 
     fun login(@Valid accountLogin: AccountLoginRequest): TokenResponse {
-        val account: Account = findByEmail(accountLogin.email)
-        if (!BCrypt.checkpw(accountLogin.password, account.password)) {
-            throw AccountNotFound()
-        }
+        val account = findByEmail(accountLogin.email)
+        if (!BCrypt.checkpw(accountLogin.password, account.password)) throw AccountNotFound()
         return token.generate(account)
     }
 
@@ -55,13 +49,22 @@ class AccountService {
 
     fun findById(id: Long): Account = Account.findById(id) ?: throw AccountNotFound()
 
-    private fun updateAccount(account: Account, accountCreation: AccountCreationRequest) {
-        account.email = accountCreation.email
-        account.password = BCrypt.hashpw(accountCreation.password, BCrypt.gensalt())
-        account.role = accountCreation.role
+    fun findByEmail(email: String): Account = Account.find("email", email).firstResult() ?: throw AccountNotFound()
+
+    private fun updateAccount(account: Account, accountUpdate: AccountUpdateRequest) {
+        account.email = accountUpdate.email
+        account.password = BCrypt.hashpw(accountUpdate.password, BCrypt.gensalt())
+        account.role = accountUpdate.role
         account.persist()
     }
 
-    fun findByEmail(email: String): Account =
-            Account.find("email", email).firstResult() ?: throw AccountNotFound()
+    private fun createAccount(accountCreation: AccountCreationRequest): Account {
+        val account = Account()
+        account.email = accountCreation.email
+        account.password = BCrypt.hashpw(accountCreation.password, BCrypt.gensalt())
+        account.role = Role.USER
+        account.persist()
+        return account
+    }
+
 }
